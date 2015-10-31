@@ -3,13 +3,13 @@ var bifHeaderByteRange = "bytes=0-63";
 function playBifFile1(input) {
   var input = document.getElementById("input1").innerHTML;
   console.log(input);
-  downloadUrl(input, bifHeaderByteRange, parseBifHeader);
+  downloadBinaryData(input, bifHeaderByteRange, parseBifHeader);
 }
 
 function playBifFile2(input) {
   var input = document.getElementById("input2").innerHTML;
   console.log(input);
-  downloadUrl(input, bifHeaderByteRange, parseBifHeader);
+  downloadBinaryData(input, bifHeaderByteRange, parseBifHeader);
 }
 
 function strToByteArray(str) {
@@ -24,7 +24,7 @@ function strToByteArray(str) {
   // return blob;
 }
 
-function downloadUrl(input, byterange, callback) {
+function downloadBinaryData(input, byterange, callback) {
   console.log("downloading", byterange, "in", input);
   jQuery.ajax({
     url: input,
@@ -37,6 +37,19 @@ function downloadUrl(input, byterange, callback) {
     var outBuffer = new Uint8Array(buffer);
     console.log("downloaded", outBuffer.length, "bytes");
     callback(outBuffer, input);
+  });
+}
+
+function downloadString(input, byterange, callback) {
+  console.log("downloading", byterange, "in", input);
+  jQuery.ajax({
+    url: input,
+    type: 'GET',
+    dataType: 'text',
+    headers: {Range: byterange},
+  }).done(function (buffer) {
+    console.log("downloaded", buffer.length, "bytes");
+    callback(buffer, input);
   });
 }
 
@@ -71,7 +84,7 @@ function parseBifHeader(header, input) {
   var bifIndexByteRange = "bytes=64-" + (64 + bifIndexLength-1);
   // console.log("bifIndexByteRange", bifIndexByteRange);
 
-  downloadUrl(input, bifIndexByteRange, parseBifIndexHeader);
+  downloadBinaryData(input, bifIndexByteRange, parseBifIndexHeader);
 }
 
 function parseBifIndexHeader(header, input){
@@ -85,8 +98,21 @@ function parseBifIndexHeader(header, input){
     byteOffset[j] = readUint32(header, i+4);
     console.log("Frame", j, "timeStamp", timeStamp[j], "byteOffset", byteOffset[j]);
   }
-  // console.log("indexLength", indexLength);
-  // console.log("numFrames", numFrames);
+
+  var frameByteRange = "bytes=" + byteOffset[0] + "-" + (byteOffset[1] - 1);
+  downloadBinaryData(input, frameByteRange, renderImage);
+  // downloadString(input, frameByteRange, renderImage);
+}
+
+function hexToBase64(str) {
+    return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
+}
+
+function renderImage(header, input) {
+  var img = document.createElement('img');
+  // img.src = 'data:image/jpeg;base64,' + hexToBase64(header);
+  img.src = 'data:image/jpeg;base64,' + btoa(header);
+  document.body.appendChild(img);
 }
 
 
