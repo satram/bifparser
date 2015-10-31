@@ -28,12 +28,15 @@ function downloadUrl(input, byterange, callback) {
   console.log("downloading", byterange, "in", input);
   jQuery.ajax({
     url: input,
-    dataType: "text",
+    type: 'GET',
+    dataType: 'binary',
+    processData: false,
     headers: {Range: byterange},
     responseType: 'arraybuffer'
   }).done(function (buffer) {
-    console.log("downloaded", buffer.length, "bytes");
-    callback(buffer, input);
+    var outBuffer = new Uint8Array(buffer);
+    console.log("downloaded", outBuffer.length, "bytes");
+    callback(outBuffer, input);
   });
 }
 
@@ -47,11 +50,11 @@ function readUint32(bytes, pos) {
   return result;
 }
 
-function parseBifHeader(buffer, input) {
-  var header = strToByteArray(buffer);
-  for( var i =0; i < header.length; i++) {
-    console.log(ConvertBase.dec2hex(header[i]));
-  }
+function parseBifHeader(header, input) {
+  // var header = strToByteArray(buffer);
+  // for( var i =0; i < header.length; i++) {
+  //   console.log(ConvertBase.dec2hex(header[i]));
+  // }
 
   var version = readUint32(header, 8);
   console.log("version", version);
@@ -65,14 +68,14 @@ function parseBifHeader(buffer, input) {
   var bifIndexLength = numFrames * 8;
   console.log("bifIndexLength", bifIndexLength);
 
-  var bifIndexByteRange = "bytes=64-" + (64 + bifIndexLength);
-  console.log("bifIndexByteRange", bifIndexByteRange);
+  var bifIndexByteRange = "bytes=64-" + (64 + bifIndexLength-1);
+  // console.log("bifIndexByteRange", bifIndexByteRange);
 
   downloadUrl(input, bifIndexByteRange, parseBifIndexHeader);
 }
 
-function parseBifIndexHeader(buffer, input){
-  var header = strToByteArray(buffer);
+function parseBifIndexHeader(header, input){
+  // var header = strToByteArray(buffer);
   var indexLength = header.length;
   var numFrames = indexLength / 8;
   var timeStamp = new Uint32Array(numFrames);
@@ -80,10 +83,10 @@ function parseBifIndexHeader(buffer, input){
   for (var i = 0, j = 0; i < indexLength; j++, i = i+8) {
     timeStamp[j] = readUint32(header, i);
     byteOffset[j] = readUint32(header, i+4);
-    // console.log("Frame", j, "timeStamp", timeStamp[j], "byteOffset", byteOffset[j]);
+    console.log("Frame", j, "timeStamp", timeStamp[j], "byteOffset", byteOffset[j]);
   }
-  console.log("indexLength", indexLength);
-  console.log("numFrames", numFrames);
+  // console.log("indexLength", indexLength);
+  // console.log("numFrames", numFrames);
 }
 
 
