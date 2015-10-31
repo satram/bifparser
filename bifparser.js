@@ -96,7 +96,9 @@ function parseBifIndexHeader(header, input){
   for (var i = 0, j = 0; i < indexLength; j++, i = i+8) {
     timeStamp[j] = readUint32(header, i);
     byteOffset[j] = readUint32(header, i+4);
-    console.log("Frame", j, "timeStamp", timeStamp[j], "byteOffset", byteOffset[j]);
+    if (j < 2) {
+      console.log("Frame", j, "timeStamp", timeStamp[j], "byteOffset", byteOffset[j]);
+    }
   }
 
   var frameByteRange = "bytes=" + byteOffset[0] + "-" + (byteOffset[1] - 1);
@@ -109,10 +111,20 @@ function hexToBase64(str) {
 }
 
 function renderImage(header, input) {
+  // for( var i =0; i < 10; i++) {
+  //   console.log(ConvertBase.dec2hex(header[i]));
+  // }
+  // console.log('...')
+  // for( var i =header.length-10; i < header.length; i++) {
+  //   console.log(ConvertBase.dec2hex(header[i]));
+  // }
   var img = document.createElement('img');
-  // img.src = 'data:image/jpeg;base64,' + hexToBase64(header);
-  img.src = 'data:image/jpeg;base64,' + btoa(header);
+  img.src = 'data:image/jpeg;base64,' + btoa(ab2str(header));
   document.body.appendChild(img);
+}
+
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, buf);
 }
 
 
