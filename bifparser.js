@@ -101,9 +101,10 @@ function parseBifIndexHeader(header, input){
     }
   }
 
-  var frameByteRange = "bytes=" + byteOffset[0] + "-" + (byteOffset[1] - 1);
-  downloadBinaryData(input, frameByteRange, renderImage);
-  // downloadString(input, frameByteRange, renderImage);
+  for( var i = 0; i < numFrames-1; i++) {
+    var frameByteRange = "bytes=" + byteOffset[i] + "-" + (byteOffset[i+1] - 1);
+    downloadBinaryData(input, frameByteRange, renderImage);
+  }
 }
 
 function hexToBase64(str) {
