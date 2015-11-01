@@ -7,7 +7,7 @@
 * http://www.opensource.org/licenses/mit-license
 */
 
-(function(){
+(function () {
 
     var ConvertBase = function (num) {
         return {

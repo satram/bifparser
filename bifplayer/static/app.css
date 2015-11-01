@@ -1,0 +1,162 @@
+/*
+ * Copyright 2009 FriendFeed
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-XLight.otf") format("opentype");
+  font-weight: 100;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-Light.otf") format("opentype");
+  font-weight: 300;
+}
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-Book.otf") format("opentype");
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-Bold.otf") format("opentype");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-Black.otf") format("opentype");
+  font-weight: 900;
+}
+
+/* Italic Versions */
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-XLightItalic.otf") format("opentype");
+  font-weight: 100;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-LightItalic.otf") format("opentype");
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-BookItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Verlag";
+  src: url("/static/fonts/Verlag-BlackItalic.otf") format("opentype");
+  font-weight: 900;
+  font-style: italic;
+}
+
+/* Force all fonts to Verlag globally */
+* {
+  font-family: "Verlag" !important;
+}
+
+/* Re-set glyph icon font */
+.glyphicon {
+  font-family: 'Glyphicons Halflings' !important;
+}
+
+body {
+  padding-top: 80px;
+}
+
+/* Overridden from bootstrap */
+.list-group-item,
+.panel-heading,
+.panel-body {
+  padding: 2px;
+}
+
+/* Remove negative margin from rows nested within list groups. */
+.list-group-item > .row,
+.panel-heading > .row,
+.panel-body > .row {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Remove margin and padding from elements within a row nested within list groups. */
+.list-group-item > .row > *,
+.panel-heading > .row > *,
+.panel-body > .row > * {
+  padding: 2px !important;
+  margin: 0 !important;
+
+  /* force vertical centering */
+  display: inline-block;
+  vertical-align: middle;
+  float: none;
+}
+
+/* Force both progress bars and labels to have no margin. */
+.progress,
+.label {
+  margin: 0;
+}
+
+.vcenter {
+  display: inline-block;
+  vertical-align: middle;
+  float: none;
+}
+
+.nopadding {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.task-column-title {
+  /* text-decoration: underline; */
+  font-weight: bold;
+  font-size: x-small;
+}
+
+.bif-logo-text {
+  font-weight: 100;
+  max-height: 19px;
+
+  /*font-size: 16px;*/
+  text-align: center;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.bif-logo {
+  max-height: 18px;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: top; /* remove space for decenders */
+}

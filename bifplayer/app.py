@@ -1,6 +1,6 @@
 #!/usr/bin/env python
+""" simple tornado based backend"""
 import os
-import sys
 import logging
 
 import tornado.ioloop
@@ -15,12 +15,15 @@ define("port",
        type=int,
        help="run on the given port")
 
+
 class Application(tornado.web.Application):
 
     """ This is the main Tornado application for the ITM Webapp backend """
 
     def __init__(self):
-        self.images_path = os.path.join(os.path.dirname(__file__), 'static/images')
+        self.images_path = os.path.join(
+            os.path.dirname(__file__),
+            'static/images')
         handlers = [
             (r"/",
              MainHandler),
@@ -40,6 +43,8 @@ class Application(tornado.web.Application):
             exiting the application goes here.'''
         log.info('Start application cleanup')
         # Cleanup any temporary preset files created for added jobs
+        self.images_path = ''
+
 
 class MainHandler(RequestHandler):
 
