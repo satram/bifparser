@@ -1,1 +1,1 @@
-python -m bifplayer.app 
+python -m bifplayer.app --logging=debug
