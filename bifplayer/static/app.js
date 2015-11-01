@@ -1,11 +1,15 @@
 
-function playBifFile(dynamic_url) {
-  var selected_movie = $('#movie :selected').text(); //document.getElementById("movie").innerHTML;
+var fileSize, timeStamp, byteOffset, frameSize, bifHeaderLength = 64;
+
+function loadBifFile(dynamic_url) {
+  fileSize = 0;
+  var selected_movie = $('#movie :selected').text();
   console.log(selected_movie);
   var dynamic_url = 'http://' + window.location.hostname + ':'
     + window.location.port + '/api/images/' + selected_movie + '.bif'
   console.log(dynamic_url)
-  var bifHeaderByteRange = "bytes=0-63";
+  getFileSize(dynamic_url);
+  var bifHeaderByteRange = "bytes=0-" + (bifHeaderLength - 1);
   downloadBinaryData(dynamic_url, bifHeaderByteRange, parseBifHeader);
 }
 
@@ -15,10 +19,6 @@ function strToByteArray(str) {
    bufView[i] = (str.charCodeAt(i) & 0xFF) >>> 0;
   }
   return bufView;
-  // var byteArray = new Uint8Array(str);
-  // return byteArray;
-  // var blob = new Blob([str], {type: "image/png"});
-  // return blob;
 }
 
 function downloadBinaryData(dynamic_url, byterange, callback) {
@@ -50,6 +50,18 @@ function downloadString(dynamic_url, byterange, callback) {
   });
 }
 
+function getFileSize(dynamic_url) {
+  console.log("get filesize for ", dynamic_url);
+  var request = jQuery.ajax({
+    url: dynamic_url,
+    type: 'HEAD',
+    success: function () {
+      fileSize = request.getResponseHeader("Content-Length");
+      console.log("filesize is", fileSize);
+    }
+  });
+}
+
 function scaleNum(num, pos) {
   var scaled = (num << ( 8 * pos)) >>> 0;
   return scaled;
@@ -61,10 +73,7 @@ function readUint32(bytes, pos) {
 }
 
 function parseBifHeader(header, dynamic_url) {
-  // var header = strToByteArray(buffer);
-  // for( var i =0; i < header.length; i++) {
   //   console.log(ConvertBase.dec2hex(header[i]));
-  // }
 
   var version = readUint32(header, 8);
   console.log("version", version);
@@ -88,20 +97,33 @@ function parseBifIndexHeader(header, dynamic_url){
   // var header = strToByteArray(buffer);
   var indexLength = header.length;
   var numFrames = indexLength / 8;
-  var timeStamp = new Uint32Array(numFrames);
-  var byteOffset = new Uint32Array(numFrames);
-  for (var i = 0, j = 0; i < indexLength; j++, i = i+8) {
+  timeStamp = new Uint32Array(numFrames);
+  byteOffset = new Uint32Array(numFrames);
+  frameSize = new Uint32Array(numFrames);
+
+  var i = 0, j = 0;
+  timeStamp[j] = readUint32(header, i);
+  byteOffset[j] = readUint32(header, i+4);
+  i = i+8; j++;
+  for (;i < indexLength; j++, i=i+8) {
     timeStamp[j] = readUint32(header, i);
     byteOffset[j] = readUint32(header, i+4);
-    if (j < 2) {
-      console.log("Frame", j, "timeStamp", timeStamp[j], "byteOffset", byteOffset[j]);
-    }
+    frameSize[j-1] = byteOffset[j] - byteOffset[j-1];
+    console.log("Frame", j-1, "timeStamp", timeStamp[j-1], "byteOffset", byteOffset[j-1], "frameSize", frameSize[j-1]);
   }
+  frameSize[j-1] = fileSize - byteOffset[j-1];
+  console.log("Frame", j-1, "timeStamp", timeStamp[j-1], "byteOffset", byteOffset[j-1], "frameSize", frameSize[j-1]);
+}
 
-  for( var i = 0; i < numFrames-1; i++) {
-    var frameByteRange = "bytes=" + byteOffset[i] + "-" + (byteOffset[i+1] - 1);
-    downloadBinaryData(dynamic_url, frameByteRange, renderImage);
-  }
+function playFile(){
+  var selected_movie = $('#movie :selected').text();
+  var dynamic_url = 'http://' + window.location.hostname + ':'
+    + window.location.port + '/api/images/' + selected_movie + '.bif'
+  _.each(byteOffset, function(offset){
+      var frameIndex = _.indexOf(byteOffset, offset);
+      var frameByteRange = "bytes=" + offset + "-" + (offset+frameSize[frameIndex]-1);
+      downloadBinaryData(dynamic_url, frameByteRange, renderImage);
+  });
 }
 
 function hexToBase64(str) {
@@ -109,13 +131,6 @@ function hexToBase64(str) {
 }
 
 function renderImage(header, dynamic_url) {
-  // for( var i =0; i < 10; i++) {
-  //   console.log(ConvertBase.dec2hex(header[i]));
-  // }
-  // console.log('...')
-  // for( var i =header.length-10; i < header.length; i++) {
-  //   console.log(ConvertBase.dec2hex(header[i]));
-  // }
   var img = document.createElement('img');
   img.src = 'data:image/jpeg;base64,' + btoa(ab2str(header));
   document.body.appendChild(img);
@@ -125,8 +140,6 @@ function ab2str(buf) {
   return String.fromCharCode.apply(null, buf);
 }
 
-
-function redirect()
-{
+function redirect() {
     window.location.href = "mailto:satheesh.ram@gmail.com";
 }

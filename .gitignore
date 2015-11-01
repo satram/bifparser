@@ -1,1 +1,4 @@
 *.pyc
+err.txt
+log.txt
+_buildlog

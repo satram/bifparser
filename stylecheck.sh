@@ -10,7 +10,7 @@ fi
 
 # Run js and python strict style checkers.
 
-PACKAGE_DIR=itmwebapp
+PACKAGE_DIR=bifplayer
 
 # Directory of "this" script.
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
