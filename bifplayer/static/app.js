@@ -1,15 +1,12 @@
-var bifHeaderByteRange = "bytes=0-63";
 
-function playBifFile1(input) {
-  var input = document.getElementById("input1").innerHTML;
-  console.log(input);
-  downloadBinaryData(input, bifHeaderByteRange, parseBifHeader);
-}
-
-function playBifFile2(input) {
-  var input = document.getElementById("input2").innerHTML;
-  console.log(input);
-  downloadBinaryData(input, bifHeaderByteRange, parseBifHeader);
+function playBifFile(dynamic_url) {
+  var selected_movie = $('#movie :selected').text(); //document.getElementById("movie").innerHTML;
+  console.log(selected_movie);
+  var dynamic_url = 'http://' + window.location.hostname + ':'
+    + window.location.port + '/api/images/' + selected_movie + '.bif'
+  console.log(dynamic_url)
+  var bifHeaderByteRange = "bytes=0-63";
+  downloadBinaryData(dynamic_url, bifHeaderByteRange, parseBifHeader);
 }
 
 function strToByteArray(str) {
@@ -24,10 +21,10 @@ function strToByteArray(str) {
   // return blob;
 }
 
-function downloadBinaryData(input, byterange, callback) {
-  console.log("downloading", byterange, "in", input);
+function downloadBinaryData(dynamic_url, byterange, callback) {
+  console.log("downloading", byterange, "in", dynamic_url);
   jQuery.ajax({
-    url: input,
+    url: dynamic_url,
     type: 'GET',
     dataType: 'binary',
     processData: false,
@@ -36,20 +33,20 @@ function downloadBinaryData(input, byterange, callback) {
   }).done(function (buffer) {
     var outBuffer = new Uint8Array(buffer);
     console.log("downloaded", outBuffer.length, "bytes");
-    callback(outBuffer, input);
+    callback(outBuffer, dynamic_url);
   });
 }
 
-function downloadString(input, byterange, callback) {
-  console.log("downloading", byterange, "in", input);
+function downloadString(dynamic_url, byterange, callback) {
+  console.log("downloading", byterange, "in", dynamic_url);
   jQuery.ajax({
-    url: input,
+    url: dynamic_url,
     type: 'GET',
     dataType: 'text',
     headers: {Range: byterange},
   }).done(function (buffer) {
     console.log("downloaded", buffer.length, "bytes");
-    callback(buffer, input);
+    callback(buffer, dynamic_url);
   });
 }
 
@@ -63,7 +60,7 @@ function readUint32(bytes, pos) {
   return result;
 }
 
-function parseBifHeader(header, input) {
+function parseBifHeader(header, dynamic_url) {
   // var header = strToByteArray(buffer);
   // for( var i =0; i < header.length; i++) {
   //   console.log(ConvertBase.dec2hex(header[i]));
@@ -84,10 +81,10 @@ function parseBifHeader(header, input) {
   var bifIndexByteRange = "bytes=64-" + (64 + bifIndexLength-1);
   // console.log("bifIndexByteRange", bifIndexByteRange);
 
-  downloadBinaryData(input, bifIndexByteRange, parseBifIndexHeader);
+  downloadBinaryData(dynamic_url, bifIndexByteRange, parseBifIndexHeader);
 }
 
-function parseBifIndexHeader(header, input){
+function parseBifIndexHeader(header, dynamic_url){
   // var header = strToByteArray(buffer);
   var indexLength = header.length;
   var numFrames = indexLength / 8;
@@ -103,7 +100,7 @@ function parseBifIndexHeader(header, input){
 
   for( var i = 0; i < numFrames-1; i++) {
     var frameByteRange = "bytes=" + byteOffset[i] + "-" + (byteOffset[i+1] - 1);
-    downloadBinaryData(input, frameByteRange, renderImage);
+    downloadBinaryData(dynamic_url, frameByteRange, renderImage);
   }
 }
 
@@ -111,7 +108,7 @@ function hexToBase64(str) {
     return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
 }
 
-function renderImage(header, input) {
+function renderImage(header, dynamic_url) {
   // for( var i =0; i < 10; i++) {
   //   console.log(ConvertBase.dec2hex(header[i]));
   // }
