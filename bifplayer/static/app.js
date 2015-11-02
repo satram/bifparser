@@ -1,156 +1,170 @@
+var bifParser = {
 
-var fileSize, timeStamp, byteOffset, frameSize, bifHeaderLength = 64;
+    fileSize :0,
+    timeStamp: 0,
+    frameStartOffset: 0,
+    frameSize: 0,
 
-function loadBifFile(dynamic_url) {
-    var selected_movie, dynamic_url, bifHeaderByteRange;
 
-    selected_movie = $('#movie :selected').text();
-    console.log(selected_movie);
+    loadBifFile: function () {
+        var selected_movie, dynamicUrl, bifHeaderByteRange,
+            bifHeaderLength = 64;
 
-    dynamic_url = 'http://' + window.location.hostname + ':' +
-        window.location.port + '/api/images/' + selected_movie + '.bif'
-    console.log(dynamic_url)
+        selected_movie = $('#movie :selected').text();
+        console.log(selected_movie);
 
-    fileSize = 0;
-    getFileSize(dynamic_url);
+        dynamicUrl = 'http://' + window.location.hostname + ':' +
+            window.location.port + '/api/images/' + selected_movie + '.bif'
+        console.log(dynamicUrl)
 
-    bifHeaderByteRange = "bytes=0-" + (bifHeaderLength - 1);
-    downloadBinaryData(dynamic_url, bifHeaderByteRange, parseBifHeader);
-}
+        bifParser.getFileSize(dynamicUrl);
 
-function strToByteArray(str) {
-    var byteArray, i;
-    byteArray = new Uint8Array(str.length);
-    for (i = 0, strLen = str.length; i < strLen; i++) {
-        byteArray[i] = (str.charCodeAt(i) & 0xFF) >>> 0;
-    }
-    return byteArray;
-}
+        bifHeaderByteRange = "bytes=0-" + (bifParser.bifHeaderLength - 1);
+        bifParser.downloadBinaryData(
+            dynamicUrl, bifHeaderByteRange, bifParser.parseHeader);
+    },
 
-function downloadBinaryData(dynamic_url, byterange, callback) {
-    console.log("downloading", byterange, "in", dynamic_url);
-    jQuery.ajax({
-        url: dynamic_url,
-        type: 'GET',
-        dataType: 'binary',
-        processData: false,
-        headers: {Range: byterange},
-        responseType: 'arraybuffer'
-    }).done(function (buffer) {
-        var outBuffer = new Uint8Array(buffer);
-        console.log("downloaded", outBuffer.length, "bytes");
-        callback(outBuffer, dynamic_url);
-    });
-}
-
-function downloadString(dynamic_url, byterange, callback) {
-    console.log("downloading", byterange, "in", dynamic_url);
-    jQuery.ajax({
-        url: dynamic_url,
-        type: 'GET',
-        dataType: 'text',
-        headers: {Range: byterange}
-    }).done(function (buffer) {
-        console.log("downloaded", buffer.length, "bytes");
-        callback(buffer, dynamic_url);
-    });
-}
-
-function getFileSize(dynamic_url) {
-    console.log("get filesize for ", dynamic_url);
-    var request = jQuery.ajax({
-        url: dynamic_url,
-        type: 'HEAD',
-        success: function () {
-            fileSize = request.getResponseHeader("Content-Length");
-            console.log("filesize is", fileSize);
+    strToByteArray: function (str) {
+        var byteArray, i;
+        byteArray = new Uint8Array(str.length);
+        for (i = 0, strLen = str.length; i < strLen; i++) {
+            byteArray[i] = (str.charCodeAt(i) & 0xFF) >>> 0;
         }
-    });
-}
+        return byteArray;
+    },
 
-function scaleNum(num, pos) {
-    var scaled = (num << (8 * pos)) >>> 0;
-    return scaled;
-}
+    downloadBinaryData: function (dynamicUrl, byterange, callback) {
+        console.log("downloading", byterange, "in", dynamicUrl);
+        jQuery.ajax({
+            url: dynamicUrl,
+            type: 'GET',
+            dataType: 'binary',
+            processData: false,
+            headers: {Range: byterange},
+            responseType: 'arraybuffer'
+        }).done(function (buffer) {
+            var outBuffer = new Uint8Array(buffer);
+            console.log("downloaded", outBuffer.length, "bytes");
+            callback(outBuffer, dynamicUrl);
+        });
+    },
 
-function readUint32(bytes, pos) {
-    var result = scaleNum(bytes[pos], 0) + scaleNum(bytes[pos + 1], 1) +
-        scaleNum(bytes[pos + 2], 2) + scaleNum(bytes[pos + 3], 3);
-    return result;
-}
+    downloadString: function (dynamicUrl, byterange, callback) {
+        console.log("downloading", byterange, "in", dynamicUrl);
+        jQuery.ajax({
+            url: dynamicUrl,
+            type: 'GET',
+            dataType: 'text',
+            headers: {Range: byterange}
+        }).done(function (buffer) {
+            console.log("downloaded", buffer.length, "bytes");
+            callback(buffer, dynamicUrl);
+        });
+    },
 
-function parseBifHeader(header, dynamic_url) {
-    var version, numFrames, timeStampMultiplier, bifIndexLength, bifIndexByteRange;
+    getFileSize: function (dynamicUrl) {
+        console.log("get filesize for ", dynamicUrl);
+        var request = jQuery.ajax({
+            url: dynamicUrl,
+            type: 'HEAD',
+            success: function () {
+                bifParser.fileSize = request.getResponseHeader("Content-Length");
+                console.log("filesize is", bifParser.fileSize);
+            }
+        });
+    },
 
-    version = readUint32(header, 8);
-    console.log("version", version);
+    scaleNum: function (num, pos) {
+        var scaled = (num << (8 * pos)) >>> 0;
+        return scaled;
+    },
 
-    numFrames = readUint32(header, 12);
-    console.log("numFrames", numFrames);
+    readUint32: function (bytes, pos) {
+        var result = bifParser.scaleNum(bytes[pos], 0) + bifParser.scaleNum(bytes[pos + 1], 1) +
+            bifParser.scaleNum(bytes[pos + 2], 2) + bifParser.scaleNum(bytes[pos + 3], 3);
+        return result;
+    },
 
-    timeStampMultiplier = readUint32(header, 16);
-    console.log("timeStampMultiplier", timeStampMultiplier);
+    parseHeader: function (header, dynamicUrl) {
+        var version, numFrames, timeStampMultiplier, bifIndexLength, bifIndexByteRange;
 
-    bifIndexLength = numFrames * 8;
-    console.log("bifIndexLength", bifIndexLength);
+        version = bifParser.readUint32(header, 8);
+        console.log("version", version);
 
-    bifIndexByteRange = "bytes=64-" + (64 + bifIndexLength - 1);
-    // console.log("bifIndexByteRange", bifIndexByteRange);
+        numFrames = bifParser.readUint32(header, 12);
+        console.log("numFrames", numFrames);
 
-    downloadBinaryData(dynamic_url, bifIndexByteRange, parseBifIndexHeader);
-}
+        timeStampMultiplier = bifParser.readUint32(header, 16);
+        console.log("timeStampMultiplier", timeStampMultiplier);
 
-function parseBifIndexHeader(header, dynamic_url) {
-    var indexLength, numFrames, i, j;
+        bifIndexLength = numFrames * 8;
+        console.log("bifIndexLength", bifIndexLength);
 
-    indexLength = header.length;
-    numFrames = indexLength / 8;
-    timeStamp = new Uint32Array(numFrames);
-    byteOffset = new Uint32Array(numFrames);
-    frameSize = new Uint32Array(numFrames);
+        bifIndexByteRange = "bytes=64-" + (64 + bifIndexLength - 1);
+        // console.log("bifIndexByteRange", bifIndexByteRange);
 
-    i = 0;
-    j = 0;
-    timeStamp[j] = readUint32(header, i);
-    byteOffset[j] = readUint32(header, i + 4);
-    i = i + 8; j++;
-    for (; i < indexLength; j++, i = i + 8) {
-        timeStamp[j] = readUint32(header, i);
-        byteOffset[j] = readUint32(header, i + 4);
-        frameSize[j - 1] = byteOffset[j] - byteOffset[j - 1];
-        console.log("Frame", j - 1, "timeStamp", timeStamp[j - 1], "byteOffset", byteOffset[j - 1], "frameSize", frameSize[j - 1]);
+        bifParser.downloadBinaryData(dynamicUrl, bifIndexByteRange, bifParser.parseIndexTable);
+    },
+
+    parseIndexTable: function (header, dynamicUrl) {
+        var indexLength, numFrames, i, j;
+
+        indexLength = header.length;
+        numFrames = indexLength / 8;
+        bifParser.imeStamp = new Uint32Array(numFrames);
+        bifParser.frameStartOffset = new Uint32Array(numFrames);
+        bifParser.frameSize = new Uint32Array(numFrames);
+
+        i = 0;
+        j = 0;
+        bifParser.imeStamp[j] = bifParser.readUint32(header, i);
+        bifParser.frameStartOffset[j] = bifParser.readUint32(header, i + 4);
+        i = i + 8; j++;
+        for (; i < indexLength; j++, i = i + 8) {
+            bifParser.imeStamp[j] = bifParser.readUint32(header, i);
+            bifParser.frameStartOffset[j] = bifParser.readUint32(header, i + 4);
+            bifParser.frameSize[j - 1] = bifParser.frameStartOffset[j] - bifParser.frameStartOffset[j - 1];
+            console.log(
+                "Frame", j - 1, "timeStamp", bifParser.timeStamp[j - 1],
+                "frameStartOffset", bifParser.frameStartOffset[j - 1],
+                "frameSize", bifParser.frameSize[j - 1]);
+        }
+        bifParser.frameSize[j - 1] = bifParser.fileSize - bifParser.frameStartOffset[j - 1];
+        console.log(
+            "Frame", j - 1, "timeStamp", bifParser.timeStamp[j - 1],
+            "frameStartOffset", bifParser.frameStartOffset[j - 1],
+            "frameSize", bifParser.frameSize[j - 1]);
+    },
+
+    playFile: function () {
+        var selected_movie, dynamicUrl;
+
+        selected_movie = $('#movie :selected').text();
+        dynamicUrl = 'http://' + window.location.hostname + ':' +
+            window.location.port + '/api/images/' + selected_movie + '.bif'
+        _.each(bifParser.frameStartOffset, function (offset) {
+            var frameIndex, frameByteRange;
+            frameIndex = _.indexOf(bifParser.frameStartOffset, offset);
+            frameByteRange = "bytes=" + offset + "-" +
+                (offset + bifParser.frameSize[frameIndex] - 1);
+            bifParser.downloadBinaryData(
+                dynamicUrl, frameByteRange, bifParser.renderImage);
+        });
+    },
+
+    hexToBase64: function (str) {
+        return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
+    },
+
+    renderImage: function (header, dynamicUrl) {
+        var img = document.createElement('img');
+        img.src = 'data:image/jpeg;base64,' + btoa(bifParser.ab2str(header));
+        document.body.appendChild(img);
+    },
+
+    ab2str: function (buf) {
+        return String.fromCharCode.apply(null, buf);
     }
-    frameSize[j - 1] = fileSize - byteOffset[j - 1];
-    console.log("Frame", j - 1, "timeStamp", timeStamp[j - 1], "byteOffset", byteOffset[j - 1], "frameSize", frameSize[j - 1]);
-}
-
-function playFile() {
-    var selected_movie, dynamic_url;
-
-    selected_movie = $('#movie :selected').text();
-    dynamic_url = 'http://' + window.location.hostname + ':' +
-        window.location.port + '/api/images/' + selected_movie + '.bif'
-    _.each(byteOffset, function (offset) {
-        var frameIndex, frameByteRange;
-        frameIndex = _.indexOf(byteOffset, offset);
-        frameByteRange = "bytes=" + offset + "-" +
-            (offset + frameSize[frameIndex] - 1);
-        downloadBinaryData(dynamic_url, frameByteRange, renderImage);
-    });
-}
-
-function hexToBase64(str) {
-    return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
-}
-
-function renderImage(header, dynamic_url) {
-    var img = document.createElement('img');
-    img.src = 'data:image/jpeg;base64,' + btoa(ab2str(header));
-    document.body.appendChild(img);
-}
-
-function ab2str(buf) {
-    return String.fromCharCode.apply(null, buf);
 }
 
 function redirect() {
