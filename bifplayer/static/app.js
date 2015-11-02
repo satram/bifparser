@@ -134,7 +134,7 @@ BifParser.prototype.initHeader = function () {
     this.downloadBinaryData(bifHeaderByteRange, this.parseHeader);
 }
 
-//public member
+// public member
 BifParser.prototype.playFile = function () {
     console.log('number of entries in frameStartOffset', this.frameStartOffset.length);
     console.log('number of entries in frameSize', this.frameSize.length);
@@ -149,6 +149,15 @@ BifParser.prototype.playFile = function () {
     });
 }
 
+//public member
+BifParser.prototype.RenderFrames = function (frameNum) {
+    console.log('rendering framenum #', frameNum);
+    var frameByteRange = "bytes=" +
+        this.frameStartOffset[frameNum] + "-" +
+        (this.frameStartOffset[frameNum] + this.frameSize[frameNum] - 1);
+    this.downloadBinaryData(frameByteRange, this.renderImage);
+}
+
 // wrappers for calling from html
 var bifParserInstance;
 
@@ -160,7 +169,10 @@ function initialize() {
 }
 
 function play() {
-    bifParserInstance.playFile();
+    //bifParserInstance.playFile();
+    for (var i = 0; i <  bifParserInstance.numFrames; i++) {
+        bifParserInstance.RenderFrames(i);
+    }
 }
 
 function redirect() {
