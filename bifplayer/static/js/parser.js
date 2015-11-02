@@ -1,31 +1,30 @@
-function BifParser(selectedMovie) {
+function BifParser(dynamicURL) {
     // private variable
-    var that = this;
+    var that = this, fileSize;
 
-    //instance variables
-    this.fileSize = 0;
-    this.timeStamp = 0;
-    this.frameStartOffset = 0;
-    this.frameSize = 0;
-    this.dynamicUrl = 'http://' + window.location.hostname + ':' +
-        window.location.port + '/api/images/' + selectedMovie + '.bif'
-    console.log(this.dynamicUrl)
+    this.frameTimeStamp = null;
+    this.frameStartOffset = null;
+    this.frameSize = null;
+    this.onInitHeaderComplete = null;
+
+    //public member variables
+    this.URL = dynamicURL;
     this.version = 0;
     this.numFrames = 0;
-    this.timeStampMultiplier = 0;
+    this.frameTimeStampMultiplier = 0;
     this.bifIndexTableLength = 0;
 
     //--------- private members ------------------
 
     //gets the size of online resource from its metadata
     function getFileSize() {
-        console.log("get filesize for ", that.dynamicUrl);
+        console.log("get filesize for ", that.URL);
         var request = jQuery.ajax({
-            url: that.dynamicUrl,
+            url: that.URL,
             type: 'HEAD',
             success: function () {
-                that.fileSize = request.getResponseHeader("Content-Length");
-                console.log("filesize is", that.fileSize);
+                fileSize = request.getResponseHeader("Content-Length");
+                console.log("filesize is", fileSize);
             }
         });
     };
@@ -46,9 +45,9 @@ function BifParser(selectedMovie) {
     //--------- privileged members ------------------
     //ajax wrapper
     this.downloadBinaryData = function (byterange, callback) {
-        console.log("downloading", byterange, "in", this.dynamicUrl);
+        console.log("downloading", byterange, "in", this.URL);
         jQuery.ajax({
-            url: this.dynamicUrl,
+            url: this.URL,
             type: 'GET',
             dataType: 'binary',
             processData: false,
@@ -71,8 +70,8 @@ function BifParser(selectedMovie) {
         that.numFrames = readUint32(header, 12);
         console.log("numFrames", that.numFrames);
 
-        that.timeStampMultiplier = readUint32(header, 16);
-        console.log("timeStampMultiplier", that.timeStampMultiplier);
+        that.frameTimeStampMultiplier = readUint32(header, 16);
+        console.log("frameTimeStampMultiplier", that.frameTimeStampMultiplier);
 
         that.bifIndexTableLength = that.numFrames * oneIndexLen;
         console.log("bifIndexTableLength", that.bifIndexTableLength);
@@ -85,28 +84,30 @@ function BifParser(selectedMovie) {
     this.parseIndexTable = function (header) {
         var i = 0, j = 0;
 
-        that.timeStamp = new Uint32Array(that.numFrames);
+        that.frameTimeStamp = new Uint32Array(that.numFrames);
         that.frameStartOffset = new Uint32Array(that.numFrames);
         that.frameSize = new Uint32Array(that.numFrames);
 
-        that.timeStamp[j] = readUint32(header, i) * that.timeStampMultiplier;
+        that.frameTimeStamp[j] = readUint32(header, i) * that.frameTimeStampMultiplier;
         that.frameStartOffset[j] = readUint32(header, i + 4);
 
         i = i + 8; j++;
         for (; i < that.bifIndexTableLength; j++, i = i + 8) {
-            that.timeStamp[j] = readUint32(header, i) * that.timeStampMultiplier;
+            that.frameTimeStamp[j] = readUint32(header, i) * that.frameTimeStampMultiplier;
             that.frameStartOffset[j] = readUint32(header, i + 4);
             that.frameSize[j - 1] = that.frameStartOffset[j] - that.frameStartOffset[j - 1];
             console.log(
-                "Frame", j - 1, "timeStamp", that.timeStamp[j - 1],
+                "Frame", j - 1, "frameTimeStamp", that.frameTimeStamp[j - 1],
                 "frameStartOffset", that.frameStartOffset[j - 1],
                 "frameSize", that.frameSize[j - 1]);
         }
-        that.frameSize[j - 1] = that.fileSize - that.frameStartOffset[j - 1];
+        that.frameSize[j - 1] = fileSize - that.frameStartOffset[j - 1];
         console.log(
-            "Frame", j - 1, "timeStamp", that.timeStamp[j - 1],
+            "Frame", j - 1, "frameTimeStamp", that.frameTimeStamp[j - 1],
             "frameStartOffset", that.frameStartOffset[j - 1],
             "frameSize", that.frameSize[j - 1]);
+
+        that.onInitHeaderComplete(that);
     };
 
     getFileSize();
@@ -128,9 +129,10 @@ function BifParser(selectedMovie) {
 }
 
 //public member
-BifParser.prototype.initHeader = function () {
+BifParser.prototype.initHeader = function (callback) {
     var bifHeaderByteRange, bifHeaderLength = 64;
     bifHeaderByteRange = "bytes=0-" + (bifHeaderLength - 1);
+    this.onInitHeaderComplete = callback;
     this.downloadBinaryData(bifHeaderByteRange, this.parseHeader);
 }
 
