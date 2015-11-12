@@ -2,3 +2,7 @@
 err.txt
 log.txt
 _buildlog
+tmp
+*.tgz
+dist
+bifplayer.egg-info

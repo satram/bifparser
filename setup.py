@@ -9,7 +9,7 @@ except ImportError:
     from distutils.core import setup
 
 
-from itmwebapp import __version__
+from bifplayer import __version__
 
 setup(
     name='bifplayer',
