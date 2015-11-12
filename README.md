@@ -10,7 +10,7 @@ necessary callbacks. Javascript implementation.
 
 ### How do I get set up? ###
 
-Not yet
+Not yet available
 
 ### Contribution guidelines ###
 
